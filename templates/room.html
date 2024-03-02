@@ -2,8 +2,11 @@
 
 {% block content %}
     <div class="message-box">
-        <h2>Chat Room: {{code}}</h2>
-        <div class="messages" id="messages"></div>
+        <h2 id="chat-room-title">Chat Room: {{code}} as {{username}}</h2>
+        <div class="messages" id="messages">
+            <!-- add a div here where the chat messages has bubbles like messenger-->
+
+        </div>
         <div class="inputs">
             <input 
                 type="text" 
@@ -21,17 +24,26 @@
     var socketio = io();
 
     const messages = document.getElementById("messages")
-
+    <!-- make sure to know if the current name is the sender to print it in the right or left side-->
     const createMessage = (name, msg, date) => {
+        const isCurrentUser = name === "{{username}}";
+        const alignment = isCurrentUser ? 'flex-end' : 'flex-start';
+        console.log(name === "{{username}}");
+        const textColor = isCurrentUser ? '#0695FF' : "whitesmoke";
+
         const content = `
-            <div class="text">
-                <span>
+            <div class="text" style="justify-content: ${alignment}; display: flex;">
+                <span id="chat-msg" style="background-color: ${textColor};">
                     <strong>${name}</strong>: ${msg}
                 </span>
+                
+            </div>
+            <div class="text" style="justify-content: ${alignment}; display: flex;">
                 <span class="muted">
                     ${date}
                 </span>
             </div>
+            
         `
         messages.innerHTML += content;
     };
