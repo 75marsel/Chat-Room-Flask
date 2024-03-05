@@ -2,7 +2,10 @@
 
 {% block content %}
     <div class="message-box">
-        <h2 id="chat-room-title">Chat Room: {{code}} as {{username}}</h2>
+        <div class="header-box">
+            <h2 id="chat-room-title">Chat Room: {{code}} as {{username}}</h2>
+            <button type="button" id="dc-btn" onClick="disconnectUser()">X</button>
+        </div>
         <div class="messages" id="messages">
             <!-- add a div here where the chat messages has bubbles like messenger-->
 
@@ -46,10 +49,19 @@
             
         `
         messages.innerHTML += content;
+        messages.scrollTop = messages.scrollHeight;
     };
 
     socketio.on("message", (data) => {
         createMessage(data.name, data.message, data.date);
+    });
+
+    const disconnectUser = () => {
+        socketio.emit("disconnect_req", {username: "{{username}}"});
+    };
+
+    socketio.on("redirectUser", (data) => {
+        if("{{username}}" == data.username) window.location.href = data.url;
     });
 
     const sendMessage = () => {

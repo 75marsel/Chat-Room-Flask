@@ -47,7 +47,7 @@ def home():
         room = code
         if create != False:
             room = generate_unique_code(ROOM_CODE_LENGTH) 
-            rooms[room] = {"members": 0, "messages": []}
+            rooms[room] = {"members": 0, "messages": [], "members_username": []}
         elif code not in rooms:
             return render_template("home.html", error="Room does not exist!", code=code, name=name)
         
@@ -68,6 +68,12 @@ def room():
     print("current messages: ")
     print(rooms[room]["messages"])
     
+    print("current members: ")
+    print(rooms[room]["members"])
+    
+    print("current members: ")
+    print(rooms[room]["members_username"])
+    
     return render_template("room.html", code=room, username=username, messages=rooms[room]["messages"])
 
 @socketio.on("message")
@@ -87,6 +93,8 @@ def message(data):
     send(content, to=room)
     rooms[room]["messages"].append(content)
     print(f"{session.get('name')} said: {data['data']}")
+    print("current members: ")
+    print(rooms[room]["members"])
 
 @socketio.on("connect")
 def connect(auth):
@@ -104,13 +112,33 @@ def connect(auth):
     
     join_room(room)
     send({"name": name, "message": "has entered the room!", "date": date_time_today}, to=room)
-    rooms[room]["members"] += 1
+    if(name not in rooms[room]["members_username"]):
+        rooms[room]["members"] += 1
+        rooms[room]["members_username"].append(name)
+    
     print(f"{name} joined the room {room}")
 
 @socketio.on("disconnect")
-def disconnect():
+@socketio.on("disconnect_req")
+def disconnect(data=None):
     room = session.get("room")
     name = session.get("name")
+    date_time_today = get_date_time_today()
+
+    if data is None and room in rooms:
+
+        if rooms[room]["members"] < 1:
+            
+            print("in data is none and less than 1")
+            leave_chat_room(name, room, date_time_today)
+    
+    if data is not None and data["username"] == name:
+        print(f"check username: {data['username']} and name: {name}")
+        leave_chat_room(name, room, date_time_today)
+        socketio.emit("redirectUser", {"username": data['username'],"url": url_for("home")}) 
+        print(f"{name} has left the room {room}")
+
+def leave_chat_room(name, room, date_time_today):
     leave_room(room)
     
     if room in rooms:
@@ -118,11 +146,14 @@ def disconnect():
         if rooms[room]["members"] <= 0:
             del rooms[room]
     
+    
+    date_time_today = get_date_time_today()
+    
+        
     date_time_today = get_date_time_today()
     
     send({"name": name, "message": "has left the room", "date": date_time_today}, to=room)
-    print(f"{name} has left the room {room}")
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app)
